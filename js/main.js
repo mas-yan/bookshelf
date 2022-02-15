@@ -4,4 +4,7 @@ document.addEventListener("DOMContentLoaded", function() {
         event.preventDefault();
         addBook();
     })
+    if (isStorageExist()) {
+        loadDataFromStorage();
+    }
 })

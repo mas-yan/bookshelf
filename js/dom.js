@@ -6,17 +6,21 @@ function addBook() {
     const author = document.getElementById('author').value;
     const year = document.getElementById('year').value;
     const completed = document.getElementById('completed').checked;
-    console.log(completed);
 
-    const book = makeBook(title, author, year, completed);
+    const id = generateId()
+    const book = makeBook(id, title, author, year, completed);
+    const bookObject = generateBookObject(id, title, author, year, completed)
+    books.push(bookObject)
+
     if (completed) {
         document.getElementById(COMPLETED_LIST_BOOK_ID).append(book);
     } else {
         document.getElementById(UNCOMPLETED_LIST_BOOK_ID).append(book);
     }
+    saveData()
 }
 
-function makeBook(title, author, year, isCompleted) {
+function makeBook(idBook, title, author, year, isCompleted) {
     const textTitle = document.createElement("h5");
     textTitle.innerText = title;
     const textAuthor = document.createElement("p");
@@ -35,14 +39,14 @@ function makeBook(title, author, year, isCompleted) {
     cardBody.classList.add('card-body');
     const card = document.createElement('div')
     card.classList.add('card', 'shadow', 'mt-3');
-    card.setAttribute("id", "idBook")
+    // card.setAttribute("id", idBook)
 
     cardHeader.append(textTitle);
     firstCol.append(textAuthor, textYear);
     if (isCompleted) {
-        secondCol.append(createUndoButton(), createTrashButton());
+        secondCol.append(createUndoButton(idBook), createTrashButton(idBook));
     } else {
-        secondCol.append(createCheckButton(), createTrashButton());
+        secondCol.append(createCheckButton(idBook), createTrashButton(idBook));
     }
     row.append(firstCol, secondCol);
     cardBody.append(row);
@@ -62,57 +66,67 @@ function createButton(eventListener, text, ...buttonTypeClass) {
     return button;
 }
 
-function createCheckButton() {
+function createCheckButton(id) {
     return createButton(function(event) {
         // const card = document.getElementById('idBook');
         const target = event.target.parentElement.parentElement.parentElement.parentElement
-        addTaskToCompleted(target);
+        addTaskToCompleted(target, id);
     }, 'selesai', 'btn', 'btn-success', 'mx-1');
 }
 
-function addTaskToCompleted(taskElement) {
+function addTaskToCompleted(taskElement, id) {
     const taskTitle = taskElement.querySelector(".card > .card-header > h5").innerText;
     const item = taskElement.querySelectorAll("p");
     const taskAuthor = item[0].innerText;
     const taskYear = item[1].innerText;
 
-    const newBook = makeBook(taskTitle, taskAuthor, taskYear, true);
+    const newBook = makeBook(id, taskTitle, taskAuthor, taskYear, true);
     const listCompleted = document.getElementById(COMPLETED_LIST_BOOK_ID);
     listCompleted.append(newBook);
     taskElement.remove();
+    const bookTarget = findBook(id);
+    if (bookTarget == null) return;
+    bookTarget.isCompleted = true
+    saveData()
 }
 
-function removeTaskFromCompleted(taskElement) {
+function removeTaskFromCompleted(taskElement, id) {
     let confirmation = confirm("apakah anda yakin ingin menghapus buku?");
 
     if (confirmation) {
         taskElement.remove();
     }
+    deleteBookFromJson(id);
+    saveData()
 }
 
-function createTrashButton() {
+function createTrashButton(id) {
     return createButton(function(event) {
         const target = event.target.parentElement.parentElement.parentElement.parentElement
-        removeTaskFromCompleted(target);
+        removeTaskFromCompleted(target, id);
     }, 'Hapus', 'btn', 'btn-danger');
 }
 
-function undoTaskFromCompleted(taskElement) {
+function undoTaskFromCompleted(taskElement, id) {
     const listUncompleted = document.getElementById(UNCOMPLETED_LIST_BOOK_ID);
     const taskTitle = taskElement.querySelector(".card > .card-header > h5").innerText;
     const item = taskElement.querySelectorAll("p");
     const taskAuthor = item[0].innerText;
     const taskYear = item[1].innerText;
 
-    const newBook = makeBook(taskTitle, taskAuthor, taskYear, false);
+    const newBook = makeBook(id, taskTitle, taskAuthor, taskYear, false);
 
     listUncompleted.append(newBook);
     taskElement.remove();
+    const bookTarget = findBook(id);
+    if (bookTarget == null) return;
+    bookTarget.isCompleted = false
+    saveData()
 }
 
-function createUndoButton() {
+function createUndoButton(id) {
     return createButton(function(event) {
         const target = event.target.parentElement.parentElement.parentElement.parentElement
-        undoTaskFromCompleted(target);
+        undoTaskFromCompleted(target, id);
     }, 'Belum', 'btn', 'btn-success', 'mx-1');
 }
